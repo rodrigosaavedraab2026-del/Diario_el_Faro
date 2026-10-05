@@ -1,0 +1,158 @@
+/* ===== El Faro - Estilos personalizados sobre Bulma =====
+   Complementan el Framework UI sin reemplazarlo. */
+
+.aviso-superior {
+  border-radius: 0;
+  font-size: 0.95rem;
+}
+
+/* Tarjeta destacada: efecto hover suave (CU004) */
+.card-destacada {
+  transition: box-shadow 0.3s ease;
+}
+.card-destacada:hover {
+  box-shadow: 0 8px 24px rgba(10, 10, 10, 0.15);
+}
+
+/* Tarjetas de artículos pequeños (CU005) */
+.card-articulo {
+  height: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-articulo:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(10, 10, 10, 0.15);
+}
+
+/* Footer más grande (CU006) */
+.footer-grande {
+  padding-top: 3.5rem;
+  padding-bottom: 2.5rem;
+}
+
+/* Enlaces del footer con hover */
+.footer-grande a.has-text-grey-light:hover {
+  color: #ffdd57 !important;
+}
+
+/* ===== Reloj en vivo ===== */
+.reloj {
+  font-size: 0.95rem;
+}
+
+/* ===== Animación de entrada para artículos agregados dinámicamente ===== */
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animar-entrada {
+  animation: aparecer 0.4s ease both;
+}
+
+/* ===== Contador por sección ===== */
+.contador-seccion {
+  font-size: 0.9rem;
+}
+
+/* ===== Ajustes de contraste (accesibilidad WCAG AA) =====
+   El color primario por defecto de Bulma (#00d1b2) no cumple el
+   contraste mínimo con texto blanco. Se reemplaza por un azul
+   corporativo más oscuro que sí cumple AA (>= 4.5:1). */
+.button.is-primary,
+.tag.is-primary,
+.hero.is-primary {
+  background-color: #0C5A82 !important;
+  color: #ffffff !important;
+}
+.button.is-primary:hover {
+  background-color: #094866 !important;
+}
+.hero.is-primary .subtitle {
+  color: #eaf2f7 !important;
+}
+
+/* Etiquetas "light" con texto legible */
+.tag.is-primary.is-light {
+  background-color: #EBF3F8 !important;
+  color: #0C5A82 !important;
+}
+
+/* Gris de subtítulos con contraste suficiente */
+.has-text-grey {
+  color: #595959 !important;
+}
+
+/* ===== Semana 7: accesibilidad y nuevas vistas con MySQL ===== */
+
+/* Enlace "Saltar al contenido" visible solo al recibir foco con teclado */
+.saltar-contenido {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: #0C5A82;
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+}
+.saltar-contenido:focus {
+  left: 1rem;
+  top: 0.5rem;
+}
+main:focus { outline: none; }
+
+/* Foco visible en enlaces y botones (WCAG 2.4.7) */
+a:focus-visible,
+button:focus-visible,
+.pagination-link:focus-visible {
+  outline: 3px solid #ffdd57;
+  outline-offset: 2px;
+}
+
+/* Toda la tarjeta es clicable, pero el enlace real es el título */
+.card-articulo { position: relative; }
+.enlace-tarjeta { color: #242424; }
+.enlace-tarjeta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.enlace-tarjeta:hover { color: #0C5A82; text-decoration: underline; }
+
+/* Paginación: página actual con el color corporativo */
+.pagination-link.is-current {
+  background-color: #0C5A82;
+  border-color: #0C5A82;
+}
+.barra-paginacion .tag { margin-left: 0.25rem; text-decoration: none; }
+
+/* Tabla de lectores: en móviles cada fila se muestra como tarjeta */
+@media screen and (max-width: 768px) {
+  .tabla-lectores thead { display: none; }
+  .tabla-lectores tr {
+    display: block;
+    border-bottom: 1px solid #dbdbdb;
+    padding: 0.5rem 0;
+  }
+  .tabla-lectores td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border: none !important;
+    padding: 0.25rem 0.75rem;
+  }
+  .tabla-lectores td::before {
+    content: attr(data-titulo);
+    font-weight: 600;
+    color: #4a4a4a;
+  }
+}
+
+/* Aviso superior: en pantallas pequeñas el texto y el reloj se apilan
+   (evita el desplazamiento horizontal en móviles) */
+@media screen and (max-width: 768px) {
+  .aviso-superior .level { flex-wrap: wrap; gap: 0.25rem; }
+  .aviso-superior .level-left,
+  .aviso-superior .level-right { flex-shrink: 1; min-width: 0; }
+  .aviso-superior .icon-text { flex-wrap: nowrap; align-items: flex-start; }
+  .aviso-superior { font-size: 0.85rem; }
+}

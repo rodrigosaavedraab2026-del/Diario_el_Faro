@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <rect width="640" height="360" fill="#e9ecf2"/>
+  <rect x="1" y="1" width="638" height="358" fill="none" stroke="#c2c9d6" stroke-width="2"/>
+  <circle cx="320" cy="150" r="42" fill="none" stroke="#8b93a7" stroke-width="6"/>
+  <path d="M300 150 l14 14 26 -30" fill="none" stroke="#8b93a7" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="320" y="235" font-family="Arial" font-size="20" fill="#5c6478" text-anchor="middle">Imagen de referencia</text>
+  <text x="320" y="262" font-family="Arial" font-size="14" fill="#8b93a7" text-anchor="middle">(cargar foto libre de Wikimedia Commons)</text>
+</svg>
