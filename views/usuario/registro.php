@@ -4,7 +4,7 @@
     <div class="container">
       <nav class="breadcrumb" aria-label="ruta de navegación">
         <ul>
-          <li><a href="<?php echo base_url('index.php'); ?>">Inicio</a></li>
+          <li><a href="<?php echo base_url('index.php'); ?>">Portada</a></li>
           <li class="is-active"><a href="#" aria-current="page">Crear cuenta</a></li>
         </ul>
       </nav>
@@ -15,19 +15,20 @@
       <div class="columns">
         <div class="column is-8">
           <div class="box">
+            <p class="is-size-7 mb-4 has-text-grey">Los campos con <span class="marca-requerido" aria-hidden="true">*</span> son obligatorios.</p>
             <div id="mensaje-registro" class="notification is-danger <?php echo empty($errores) ? 'is-hidden' : ''; ?>" role="alert">
               <?php echo e($errores['general'] ?? 'Revisa los campos marcados en rojo.'); ?>
             </div>
 
-            <form id="form-registro" method="post" action="<?php echo base_url('index.php?c=usuario&a=guardar'); ?>" novalidate data-validar-form data-mensaje="mensaje-registro">
+            <form id="form-registro" method="post" action="<?php echo base_url('index.php?c=usuario&a=guardar'); ?>" data-validar-form data-mensaje="mensaje-registro">
               <?php echo csrf_campo(); ?>
               <div class="columns">
                 <div class="column is-6">
                   <div class="field">
-                    <label class="label" for="registro-nombre">Nombre</label>
+                    <label class="label es-requerido" for="registro-nombre">Nombre</label>
                     <div class="control has-icons-left">
                       <input class="input <?php echo clase_error('nombre', $errores); ?>" type="text" <?php echo attrs_campo('registro', 'nombre', $errores); ?>
-                             autocomplete="given-name" maxlength="80" required data-validar="requerido min:2 texto"
+                             autocomplete="given-name" minlength="2" maxlength="80" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' \-]{2,80}" title="Solo letras y espacios (mínimo 2)" data-validar="requerido min:2 texto"
                              value="<?php echo e($datos['nombre']); ?>">
                       <span class="icon is-small is-left"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
                     </div>
@@ -36,10 +37,10 @@
                 </div>
                 <div class="column is-6">
                   <div class="field">
-                    <label class="label" for="registro-apellido">Apellido</label>
+                    <label class="label es-requerido" for="registro-apellido">Apellido</label>
                     <div class="control has-icons-left">
                       <input class="input <?php echo clase_error('apellido', $errores); ?>" type="text" <?php echo attrs_campo('registro', 'apellido', $errores); ?>
-                             autocomplete="family-name" maxlength="80" required data-validar="requerido min:2 texto"
+                             autocomplete="family-name" minlength="2" maxlength="80" required pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' \-]{2,80}" title="Solo letras y espacios (mínimo 2)" data-validar="requerido min:2 texto"
                              value="<?php echo e($datos['apellido']); ?>">
                       <span class="icon is-small is-left"><i class="fa-solid fa-user" aria-hidden="true"></i></span>
                     </div>
@@ -49,10 +50,10 @@
               </div>
 
               <div class="field">
-                <label class="label" for="registro-email">Correo electrónico</label>
+                <label class="label es-requerido" for="registro-email">Correo electrónico</label>
                 <div class="control has-icons-left">
                   <input class="input <?php echo clase_error('email', $errores); ?>" type="email" <?php echo attrs_campo('registro', 'email', $errores); ?>
-                         autocomplete="email" maxlength="150" required data-validar="requerido email"
+                         autocomplete="email" maxlength="150" required title="Ejemplo: nombre@correo.cl" data-validar="requerido email"
                          value="<?php echo e($datos['email']); ?>">
                   <span class="icon is-small is-left"><i class="fa-solid fa-envelope" aria-hidden="true"></i></span>
                 </div>
@@ -62,10 +63,10 @@
               <div class="columns">
                 <div class="column is-6">
                   <div class="field">
-                    <label class="label" for="registro-password">Contraseña</label>
+                    <label class="label es-requerido" for="registro-password">Contraseña</label>
                     <div class="control has-icons-left">
                       <input class="input <?php echo clase_error('password', $errores); ?>" type="password" <?php echo attrs_campo('registro', 'password', $errores); ?>
-                             autocomplete="new-password" maxlength="72" required data-validar="requerido min:8">
+                             autocomplete="new-password" minlength="8" maxlength="72" required title="Mínimo 8 caracteres" data-validar="requerido min:8">
                       <span class="icon is-small is-left"><i class="fa-solid fa-lock" aria-hidden="true"></i></span>
                     </div>
                     <p class="help">Mínimo 8 caracteres.</p>
@@ -74,7 +75,7 @@
                 </div>
                 <div class="column is-6">
                   <div class="field">
-                    <label class="label" for="registro-password2">Repetir contraseña</label>
+                    <label class="label es-requerido" for="registro-password2">Repetir contraseña</label>
                     <div class="control has-icons-left">
                       <input class="input <?php echo clase_error('password2', $errores); ?>" type="password" <?php echo attrs_campo('registro', 'password2', $errores); ?>
                              autocomplete="new-password" maxlength="72" required data-validar="requerido igual:registro-password">
@@ -91,7 +92,7 @@
                     <label class="label" for="registro-pais">País</label>
                     <div class="control">
                       <input class="input <?php echo clase_error('pais', $errores); ?>" type="text" <?php echo attrs_campo('registro', 'pais', $errores); ?>
-                             autocomplete="country-name" maxlength="80" data-validar="texto" value="<?php echo e($datos['pais']); ?>">
+                             autocomplete="country-name" maxlength="80" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' \-]{2,80}" title="Solo letras y espacios" data-validar="texto" value="<?php echo e($datos['pais']); ?>">
                     </div>
                     <?php echo ayuda_campo('registro', 'pais', $errores); ?>
                   </div>
@@ -101,7 +102,7 @@
                     <label class="label" for="registro-ciudad">Ciudad</label>
                     <div class="control">
                       <input class="input <?php echo clase_error('ciudad', $errores); ?>" type="text" <?php echo attrs_campo('registro', 'ciudad', $errores); ?>
-                             autocomplete="address-level2" maxlength="80" data-validar="texto" value="<?php echo e($datos['ciudad']); ?>">
+                             autocomplete="address-level2" maxlength="80" pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' \-]{2,80}" title="Solo letras y espacios" data-validar="texto" value="<?php echo e($datos['ciudad']); ?>">
                     </div>
                     <?php echo ayuda_campo('registro', 'ciudad', $errores); ?>
                   </div>

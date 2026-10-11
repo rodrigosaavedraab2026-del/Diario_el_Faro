@@ -25,11 +25,11 @@ class UsuarioController
         $tituloPagina = "Crear cuenta";
         $seccionActiva = "registro";
         $errores = [];
-        $datos = ["nombre" => "", "apellido" => "", "email" => "", "pais" => "Chile", "ciudad" => "Viña del Mar", "plan" => "gratuito"];
+        $datos = ["nombre" => "", "apellido" => "", "email" => (string) filter_input(INPUT_GET, "email", FILTER_VALIDATE_EMAIL), "pais" => "Chile", "ciudad" => "Viña del Mar", "plan" => "gratuito"];
         require __DIR__ . "/../views/usuario/registro.php";
     }
 
-    /** Procesa el registro (POST): valida, crea objetos, cifra y persiste. */
+    /** Procesa el registro (POST): valida, crea objetos, genera el hash y persiste. */
     public function guardar()
     {
         if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -82,13 +82,78 @@ class UsuarioController
 
         // Creación de objetos del Modelo
         $usuario = new Usuario($datos["nombre"], $datos["apellido"], $datos["email"]);
-        $usuario->setPassword($password);           // cifrado dentro del Modelo
+        $usuario->setPassword($password);           // hash bcrypt dentro del Modelo (no cifrado)
         $usuario->setPlan($datos["plan"]);
         $usuario->setLocalidad(new Localidad($datos["pais"], $datos["ciudad"]));
 
         $this->repositorio->registrar($usuario);    // INSERT transaccional en MySQL
 
         require __DIR__ . "/../views/usuario/exito.php";
+    }
+
+    /* ------------------------------------------------------------------
+     * INICIO Y CIERRE DE SESIÓN (semana 9, recomendación del docente)
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Hash de relleno: si el correo no existe se verifica igual contra este
+     * valor, para que la respuesta tarde lo mismo y no revele qué correos
+     * están registrados.
+     */
+    const HASH_RELLENO = '$2y$12$Ra9bdnd6cAcR0X1bJOBod.8ZSz.JskqYNDy1rsTI6eX0p08ogReAO';
+
+    /** GET: formulario. POST: verificación segura de la contraseña. */
+    public function ingresar()
+    {
+        $tituloPagina  = "Ingresar";
+        $seccionActiva = "ingresar";
+        $errores = [];
+        $datos = ["email" => ""];
+
+        if ($_SERVER["REQUEST_METHOD"] === "POST") {
+            $datos["email"] = mb_strtolower(trim((string) ($_POST["email"] ?? "")), "UTF-8");
+            $password = (string) ($_POST["password"] ?? "");
+
+            $v = new Validador();
+            if (!csrf_valido()) {
+                $v->agregar("general", "La sesión expiró. Vuelve a intentarlo.");
+            }
+            $espera = Sesion::segundosBloqueo();
+            if ($espera > 0) {
+                $v->agregar("general", "Demasiados intentos fallidos. Espera $espera segundos e inténtalo de nuevo.");
+            }
+            $v->requerido("email", $datos["email"], "Ingresa tu correo.")->email("email", $datos["email"])
+              ->requerido("password", $password, "Ingresa tu contraseña.")->largo("password", $password, 1, 72);
+
+            if ($v->esValido()) {
+                $usuario = $this->repositorio->buscarParaLogin($datos["email"]);
+                $hash = $usuario !== null ? $usuario->getPasswordHash() : self::HASH_RELLENO;
+                $correcta = password_verify($password, $hash) && $usuario !== null;
+
+                if ($correcta) {
+                    if ($usuario->necesitaRehash()) {          // migra hashes antiguos de forma transparente
+                        $usuario->setPassword($password);
+                        $this->repositorio->actualizarHash($usuario);
+                    }
+                    Sesion::iniciarUsuario($usuario->getId(), $usuario->getNombre(), $usuario->getEmail());
+                    redirigir("index.php?bienvenida=1");
+                }
+                Sesion::registrarFallo();
+                // Mensaje genérico: no indica si falló el correo o la contraseña.
+                $v->agregar("general", "Correo o contraseña incorrectos.");
+            }
+            $errores = $v->errores();
+        }
+        require __DIR__ . "/../views/usuario/ingresar.php";
+    }
+
+    /** Cierra la sesión. Solo por POST y con token CSRF (un enlace externo no puede cerrarla). */
+    public function salir()
+    {
+        if ($_SERVER["REQUEST_METHOD"] === "POST" && csrf_valido()) {
+            Sesion::cerrar();
+        }
+        redirigir("index.php");
     }
 
     /** Requisito d): lista paginada de lectores registrados (GET). */

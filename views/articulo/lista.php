@@ -4,24 +4,17 @@
     <div class="container">
       <nav class="breadcrumb" aria-label="ruta de navegación">
         <ul>
-          <li><a href="<?php echo base_url('index.php'); ?>">Inicio</a></li>
+          <li><a href="<?php echo base_url('index.php'); ?>">Portada</a></li>
           <li class="is-active"><a href="#" aria-current="page">Noticias</a></li>
         </ul>
       </nav>
 
-      <div class="level mb-3">
-        <div class="level-left">
-          <div>
-            <h1 class="title is-3 mb-2">Todas las noticias</h1>
-            <p class="has-text-grey">Artículos almacenados en la base de datos, del más reciente al más antiguo.</p>
-          </div>
+      <div class="encabezado-bloque mb-4">
+        <div>
+          <h1 class="titulo-bloque is-size-3">Todas las noticias</h1>
+          <p class="has-text-grey">Del artículo más reciente al más antiguo.</p>
         </div>
-        <div class="level-right">
-          <a class="button is-primary" href="<?php echo base_url('index.php?c=articulo&a=nuevo'); ?>">
-            <span class="icon"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i></span>
-            <span>Publicar artículo</span>
-          </a>
-        </div>
+        <span class="tag is-info is-light contador-seccion"><?php echo (int) $paginador->total; ?> artículos</span>
       </div>
 
       <div class="columns is-multiline" data-seccion="noticias">

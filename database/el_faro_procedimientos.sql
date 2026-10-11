@@ -236,3 +236,57 @@ DELIMITER ;
 --   CALL sp_contacto_registrar('Ana Pérez', 'ana@correo.cl', 'Comentario',
 --        'Mensaje de prueba desde phpMyAdmin.', @p_id, @p_id_usuario);
 --   SELECT @p_id, @p_id_usuario;
+
+-- Semana 9: comentarios y sitios asociados
+DROP PROCEDURE IF EXISTS `sp_comentario_listar`;
+DROP PROCEDURE IF EXISTS `sp_comentario_registrar`;
+DROP PROCEDURE IF EXISTS `sp_sitio_listar`;
+
+DELIMITER $$
+
+-- CONSULTA: comentarios publicados de un artículo (más antiguos primero).
+-- Nunca devuelve el correo de quien comenta.
+CREATE PROCEDURE `sp_comentario_listar`(
+  IN p_id_articulo INT
+)
+READS SQL DATA
+BEGIN
+  SELECT `id_comentario`, `id_articulo`, `nombre`, `texto`, `fecha_comentario`
+    FROM `comentario`
+   WHERE `id_articulo` = p_id_articulo
+     AND `estado` = 'publicado'
+   ORDER BY `fecha_comentario` ASC, `id_comentario` ASC;
+END$$
+
+-- INSERCIÓN: registra un comentario y devuelve su id (OUT p_id).
+CREATE PROCEDURE `sp_comentario_registrar`(
+  IN  p_id_articulo INT,
+  IN  p_nombre      VARCHAR(60),
+  IN  p_email       VARCHAR(150),
+  IN  p_texto       VARCHAR(600),
+  OUT p_id          INT
+)
+MODIFIES SQL DATA
+BEGIN
+  INSERT INTO `comentario` (`id_articulo`, `nombre`, `email`, `texto`)
+  VALUES (p_id_articulo, TRIM(p_nombre), LOWER(TRIM(p_email)), TRIM(p_texto));
+  SET p_id = LAST_INSERT_ID();
+END$$
+
+-- CONSULTA: sitios asociados activos. p_slug NULL = todos;
+-- con una sección, devuelve primero los de esa sección y luego los generales.
+CREATE PROCEDURE `sp_sitio_listar`(
+  IN p_slug VARCHAR(60)
+)
+READS SQL DATA
+BEGIN
+  SELECT sa.`id_sitio`, sa.`nombre`, sa.`url`, sa.`descripcion`, sa.`categoria`,
+         s.`slug` AS `seccion_slug`
+    FROM `sitio_asociado` sa
+    LEFT JOIN `seccion` s ON s.`id_seccion` = sa.`id_seccion`
+   WHERE sa.`activo` = 1
+     AND (p_slug IS NULL OR s.`slug` = p_slug OR sa.`id_seccion` IS NULL)
+   ORDER BY (p_slug IS NOT NULL AND s.`slug` = p_slug) DESC, sa.`orden`, sa.`nombre`;
+END$$
+
+DELIMITER ;

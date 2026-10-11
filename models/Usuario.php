@@ -3,7 +3,7 @@ require_once __DIR__ . "/Localidad.php";
 /**
  * MODELO (entidad): Usuario (Lector)
  * Representa una fila de la tabla `usuario`. Aplica encapsulamiento
- * (atributos privados) y cifrado de contraseña con password_hash().
+ * (atributos privados) y HASH de contraseña con password_hash() (no es cifrado: ver SEGURIDAD.md).
  */
 class Usuario
 {
@@ -11,7 +11,7 @@ class Usuario
     private $nombre;
     private $apellido;
     private $email;
-    private $passwordHash;  // se almacena SIEMPRE cifrada (hash bcrypt)
+    private $passwordHash;  // se almacena SIEMPRE como hash bcrypt (irreversible), nunca en texto plano
     private $plan;          // gratuito | mensual | anual
     private $fechaRegistro;
     private $localidad;     // objeto Localidad asociado (composición)
@@ -49,16 +49,37 @@ class Usuario
     public function setPlan($v) { $this->plan = $v; }
     public function setLocalidad(Localidad $localidad) { $this->localidad = $localidad; }
 
-    /** Cifra la contraseña: nunca se guarda en texto plano. */
+    /**
+     * HASHING vs CIFRADO
+     *  - Un hash (bcrypt) es de UNA VÍA: no existe una clave para "descifrarlo".
+     *    Para comprobar una contraseña se calcula de nuevo con la misma sal y
+     *    se compara (password_verify). Si alguien roba la tabla, no obtiene las claves.
+     *  - El cifrado (por ejemplo AES) es REVERSIBLE con una clave: sirve para
+     *    datos que hay que volver a leer, nunca para contraseñas.
+     * password_hash() genera una sal aleatoria por usuario y la guarda dentro
+     * del propio hash ($2y$12$<sal><hash>), junto con el algoritmo y el costo.
+     */
+    const ALGORITMO_HASH = PASSWORD_BCRYPT;
+    const OPCIONES_HASH  = ["cost" => 12];   // 2^12 iteraciones: lento a propósito para frenar ataques
+
+    /** Guarda el HASH de la contraseña: el texto plano nunca se almacena. */
     public function setPassword($passwordPlano)
     {
-        $this->passwordHash = password_hash($passwordPlano, PASSWORD_DEFAULT);
+        $this->passwordHash = password_hash($passwordPlano, self::ALGORITMO_HASH, self::OPCIONES_HASH);
     }
 
-    /** Verifica una contraseña ingresada contra el hash almacenado. */
+    public function setPasswordHash($hash) { $this->passwordHash = $hash; }
+
+    /** Verificación segura: password_verify compara en tiempo constante. */
     public function verificarPassword($passwordPlano)
     {
         return password_verify($passwordPlano, (string) $this->passwordHash);
+    }
+
+    /** true si el hash se creó con un algoritmo o costo anterior y conviene renovarlo. */
+    public function necesitaRehash()
+    {
+        return password_needs_rehash((string) $this->passwordHash, self::ALGORITMO_HASH, self::OPCIONES_HASH);
     }
 
     // GET

@@ -52,6 +52,32 @@ class Validador
         return $this;
     }
 
+    /** Rechaza etiquetas HTML (p. ej. <script>) en textos que se publican. */
+    public function sinEtiquetas($campo, $valor)
+    {
+        if ($valor !== strip_tags($valor)) {
+            $this->agregar($campo, "No se permiten etiquetas HTML.");
+        }
+        return $this;
+    }
+
+    /**
+     * Cuerpo de artículo: si trae HTML, solo puede usar lo que permite la
+     * política (core/PoliticaHtml.php). Se rechaza y se informa qué sobra,
+     * para que el redactor decida en vez de perder contenido sin saberlo.
+     */
+    public function htmlPermitido($campo, $valor)
+    {
+        if (PoliticaHtml::tieneHtml($valor)) {
+            $politica = new PoliticaHtml();
+            $politica->limpiar($valor);
+            if ($politica->eliminados()) {
+                $this->agregar($campo, "Contiene elementos no permitidos: " . implode(", ", array_slice($politica->eliminados(), 0, 5)) . ".");
+            }
+        }
+        return $this;
+    }
+
     public function agregar($campo, $mensaje)
     {
         if (!isset($this->errores[$campo])) {   // conserva el primer error por campo

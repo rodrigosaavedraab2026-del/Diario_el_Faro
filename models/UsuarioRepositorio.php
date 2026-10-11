@@ -44,6 +44,35 @@ class UsuarioRepositorio extends Repositorio
         return $u->getId();
     }
 
+    /**
+     * Usuario con su hash, SOLO para verificar el inicio de sesión
+     * (el listado público nunca consulta la columna password_hash).
+     */
+    public function buscarParaLogin($email)
+    {
+        $f = $this->conexion->consultarFila(
+            "SELECT id_usuario, nombre, apellido, email, password_hash
+               FROM usuario WHERE email = :email LIMIT 1",
+            [":email" => (string) $email]
+        );
+        if ($f === null) {
+            return null;
+        }
+        $u = new Usuario($f["nombre"], $f["apellido"], $f["email"]);
+        $u->setId((int) $f["id_usuario"]);
+        $u->setPasswordHash($f["password_hash"]);
+        return $u;
+    }
+
+    /** Renueva el hash cuando password_needs_rehash() lo indica. */
+    public function actualizarHash(Usuario $u)
+    {
+        return $this->conexion->ejecutar(
+            "UPDATE usuario SET password_hash = :hash WHERE id_usuario = :id",
+            [":hash" => $u->getPasswordHash(), ":id" => (int) $u->getId()]
+        );
+    }
+
     /** Total de lectores registrados (sentencia preparada). */
     public function contar()
     {

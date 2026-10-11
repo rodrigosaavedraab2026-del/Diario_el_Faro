@@ -4,7 +4,7 @@
     <div class="container">
       <nav class="breadcrumb" aria-label="ruta de navegación">
         <ul>
-          <li><a href="<?php echo base_url('index.php'); ?>">Inicio</a></li>
+          <li><a href="<?php echo base_url('index.php'); ?>">Portada</a></li>
           <li class="is-active"><a href="#" aria-current="page">Lectores registrados</a></li>
         </ul>
       </nav>
@@ -13,7 +13,7 @@
         <div class="level-left">
           <div>
             <h1 class="title is-3 mb-2">Lectores registrados</h1>
-            <p class="has-text-grey">Usuarios creados desde el formulario «Crear cuenta» (tablas <code>usuario</code> y <code>localidad</code>).</p>
+            <p class="has-text-grey">Personas que crearon su cuenta de lector en El Faro. Por privacidad, los correos se muestran parcialmente.</p>
           </div>
         </div>
         <div class="level-right">
@@ -46,7 +46,7 @@
             <tr>
               <td data-titulo="#"><?php echo (int) $u->getId(); ?></td>
               <td data-titulo="Nombre"><?php echo e($u->getNombreCompleto()); ?></td>
-              <td data-titulo="Correo"><?php echo e($u->getEmail()); ?></td>
+              <td data-titulo="Correo"><?php echo e(ocultar_correo($u->getEmail())); ?></td>
               <td data-titulo="Localidad"><?php echo $loc ? e($loc->getCiudad() . ", " . $loc->getPais()) : "—"; ?></td>
               <td data-titulo="Plan"><span class="tag is-light"><?php echo e($planes[$u->getPlan()] ?? $u->getPlan()); ?></span></td>
               <td data-titulo="Mensajes"><?php echo (int) $u->getMensajes(); ?></td>
@@ -61,7 +61,7 @@
       <?php $etiquetaElementos = "lectores"; require __DIR__ . "/../layouts/paginacion.php"; ?>
       <p class="is-size-7 has-text-grey mt-3">
         <span class="icon-text"><span class="icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
-        <span>Las contraseñas se guardan cifradas (bcrypt) y nunca se muestran ni se consultan en este listado.</span></span>
+        <span>Las contraseñas se guardan como hash bcrypt (irreversible) y nunca se muestran ni se consultan en este listado.</span></span>
       </p>
     </div>
   </section>

@@ -20,7 +20,7 @@ class ArticuloRepositorio extends Repositorio
         return (int) $this->conProcedimiento(
             fn() => $this->conexion->llamarProcedimiento(
                 "sp_articulo_contar",
-                [$slugSeccion, $excluirDestacado ? 1 : 0],
+                [$slugSeccion, (bool) $excluirDestacado],
                 ["p_total"]
             )["salida"]["p_total"],
             function () use ($slugSeccion, $excluirDestacado) {
@@ -36,7 +36,7 @@ class ArticuloRepositorio extends Repositorio
         $filas = $this->conProcedimiento(
             fn() => $this->conexion->llamarProcedimiento(
                 "sp_articulo_listar",
-                [$slugSeccion, $excluirDestacado ? 1 : 0, (int) $limite, (int) $offset]
+                [$slugSeccion, (bool) $excluirDestacado, (int) $limite, (int) $offset]
             )["filas"],
             function () use ($limite, $offset, $slugSeccion, $excluirDestacado) {
                 [$where, $params] = $this->filtros($slugSeccion, $excluirDestacado);
@@ -59,7 +59,7 @@ class ArticuloRepositorio extends Repositorio
         $fila = $this->conexion->consultarFila(
             "SELECT * FROM vw_articulo_detalle WHERE destacado = :destacado
              ORDER BY fecha_publicacion DESC LIMIT 1",
-            [":destacado" => 1]
+            [":destacado" => true]
         );
         return $fila ? Articulo::desdeFila($fila) : null;
     }
@@ -87,7 +87,7 @@ class ArticuloRepositorio extends Repositorio
     {
         $datos = [
             $a->getTitulo(), $a->getResumen(), $a->getCuerpo(), $a->getEtiqueta(),
-            $a->getImagen(), $a->esDestacado() ? 1 : 0, (int) $a->getIdSeccion(), (int) $a->getIdAutor(),
+            $a->getImagen(), (bool) $a->esDestacado(), (int) $a->getIdSeccion(), (int) $a->getIdAutor(),
         ];
 
         $id = $this->conProcedimiento(
@@ -103,8 +103,8 @@ class ArticuloRepositorio extends Repositorio
     {
         $this->conexion->iniciarTransaccion();
         try {
-            if ($d[5] === 1) {
-                $this->conexion->ejecutar("UPDATE articulo SET destacado = 0 WHERE destacado = :marcado", [":marcado" => 1]);
+            if ($d[5] === true) {
+                $this->conexion->ejecutar("UPDATE articulo SET destacado = :no WHERE destacado = :si", [":no" => false, ":si" => true]);
             }
             $id = $this->conexion->insertar(
                 "INSERT INTO articulo (titulo, resumen, cuerpo, etiqueta, imagen, destacado, id_seccion, id_autor)
@@ -119,6 +119,56 @@ class ArticuloRepositorio extends Repositorio
         }
     }
 
+    /* ------------------------------------------------------------------
+     * SEMANA 9 (usabilidad): búsqueda y artículos relacionados.
+     * Sentencias preparadas: el texto buscado nunca se concatena al SQL.
+     * ------------------------------------------------------------------ */
+
+    /** Cuenta los artículos cuyo título, resumen o etiqueta contienen $texto. */
+    public function contarBusqueda($texto)
+    {
+        return (int) $this->conexion->consultarValor(
+            "SELECT COUNT(*) FROM vw_articulo_detalle
+              WHERE titulo LIKE :t1 OR resumen LIKE :t2 OR etiqueta LIKE :t3",
+            $this->parametrosBusqueda($texto)
+        );
+    }
+
+    /** Página de resultados de búsqueda, del más reciente al más antiguo. */
+    public function buscarTexto($texto, $limite, $offset)
+    {
+        $params = $this->parametrosBusqueda($texto);
+        $params[":limite"] = (int) $limite;
+        $params[":offset"] = (int) $offset;
+        $filas = $this->conexion->consultar(
+            "SELECT * FROM vw_articulo_detalle
+              WHERE titulo LIKE :t1 OR resumen LIKE :t2 OR etiqueta LIKE :t3
+              ORDER BY fecha_publicacion DESC, id_articulo DESC
+              LIMIT :limite OFFSET :offset",
+            $params
+        );
+        return array_map([Articulo::class, "desdeFila"], $filas);
+    }
+
+    /** Otros artículos de la misma sección (para "Más de ..." en la nota). */
+    public function listarRelacionados($slugSeccion, $excluirId, $limite = 3)
+    {
+        $filas = $this->conexion->consultar(
+            "SELECT * FROM vw_articulo_detalle
+              WHERE seccion_slug = :slug AND id_articulo <> :id
+              ORDER BY fecha_publicacion DESC LIMIT :limite",
+            [":slug" => $slugSeccion, ":id" => (int) $excluirId, ":limite" => (int) $limite]
+        );
+        return array_map([Articulo::class, "desdeFila"], $filas);
+    }
+
+    /** Escapa los comodines de LIKE (% y _) para buscar el texto literal. */
+    private function parametrosBusqueda($texto)
+    {
+        $patron = "%" . addcslashes((string) $texto, "%_\\") . "%";
+        return [":t1" => $patron, ":t2" => $patron, ":t3" => $patron];
+    }
+
     /** Condiciones WHERE con marcadores para la versión con sentencias preparadas. */
     private function filtros($slugSeccion, $excluirDestacado)
     {
@@ -129,7 +179,8 @@ class ArticuloRepositorio extends Repositorio
             $params[":slug"] = $slugSeccion;
         }
         if ($excluirDestacado) {
-            $cond[] = "destacado = 0";
+            $cond[] = "destacado = :no_destacado";
+            $params[":no_destacado"] = false;
         }
         return [$cond ? "WHERE " . implode(" AND ", $cond) : "", $params];
     }

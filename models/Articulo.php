@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../core/PoliticaHtml.php";
 /**
  * MODELO (entidad): Articulo
  * Representa una fila de la tabla `articulo` (más el nombre de su sección
@@ -82,5 +83,30 @@ class Articulo
     {
         $partes = preg_split("/\R\s*\R/u", trim((string) $this->cuerpo));
         return array_values(array_filter(array_map("trim", $partes), "strlen"));
+    }
+
+    /**
+     * Cuerpo listo para la Vista, SIEMPRE seguro:
+     *  - texto plano (artículos antiguos): se escapa con htmlspecialchars y se arma en párrafos;
+     *  - HTML enriquecido: se filtra con la lista blanca de PoliticaHtml (defensa en profundidad,
+     *    aunque ya se filtró al publicar, por si el dato se modificó directamente en MySQL).
+     */
+    public function getCuerpoHtml()
+    {
+        if (PoliticaHtml::tieneHtml($this->cuerpo)) {
+            return (new PoliticaHtml())->limpiar($this->cuerpo);
+        }
+        $html = "";
+        foreach ($this->getParrafos() as $parrafo) {
+            $html .= "<p>" . nl2br(htmlspecialchars($parrafo, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")) . "</p>\n";
+        }
+        return $html;
+    }
+
+    /** Tiempo estimado de lectura (200 palabras por minuto, mínimo 1). */
+    public function getMinutosLectura()
+    {
+        $palabras = str_word_count(strip_tags((string) $this->cuerpo . " " . $this->resumen), 0, "áéíóúüñÁÉÍÓÚÜÑ");
+        return max(1, (int) round($palabras / 200));
     }
 }

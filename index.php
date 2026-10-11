@@ -20,21 +20,41 @@
  *   index.php?c=usuario&a=registro         -> Formulario "Crear cuenta"
  *   index.php?c=usuario&a=guardar   (POST) -> Registra el usuario en MySQL
  *   index.php?c=usuario&a=listado          -> Lectores registrados
+ *   index.php?c=articulo&a=buscar&q=texto  -> Buscador de noticias (semana 9)
+ *   index.php?c=articulo&a=comentar (POST) -> Registra un comentario (semana 9)
+ *   index.php?c=usuario&a=ingresar         -> Inicio de sesión (GET formulario / POST verificación)
+ *   index.php?c=usuario&a=salir     (POST) -> Cierre de sesión
  */
 
-session_start();
+require_once __DIR__ . "/core/Sesion.php";
+Sesion::iniciar();   // cookie HttpOnly + SameSite, modo estricto y expiración por inactividad
 
 require_once __DIR__ . "/config/config.php";
 require_once __DIR__ . "/core/Paginador.php";
 require_once __DIR__ . "/core/Validador.php";
+require_once __DIR__ . "/core/PoliticaHtml.php";
 require_once __DIR__ . "/controllers/HomeController.php";
 require_once __DIR__ . "/controllers/SeccionController.php";
 require_once __DIR__ . "/controllers/ArticuloController.php";
 require_once __DIR__ . "/controllers/ContactoController.php";
 require_once __DIR__ . "/controllers/UsuarioController.php";
+require_once __DIR__ . "/models/SeccionRepositorio.php";
 
-$controlador = $_GET["c"] ?? "home";
-$accion      = $_GET["a"] ?? "index";
+/* Cabeceras de seguridad (semana 9). La política CSP solo permite scripts
+ * propios (faro.js): aunque un texto malicioso llegara a la página, el
+ * navegador no ejecutaría scripts en línea ni de otros dominios. */
+header("Content-Security-Policy: default-src 'self'; script-src 'self'; "
+     . "style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+     . "font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' https: data:; "
+     . "frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; "
+     . "form-action 'self'; frame-ancestors 'self'");
+header("X-Content-Type-Options: nosniff");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+header("X-Frame-Options: SAMEORIGIN");
+
+// Controlador y acción: solo letras minúsculas (además de la lista blanca de abajo).
+$controlador = is_string($_GET["c"] ?? null) && preg_match('/^[a-z]{1,20}$/', $_GET["c"]) ? $_GET["c"] : "home";
+$accion      = is_string($_GET["a"] ?? null) && preg_match('/^[a-z]{1,20}$/', $_GET["a"]) ? $_GET["a"] : "index";
 
 $controladores = [
     "home"     => "HomeController",
@@ -50,6 +70,9 @@ if (!isset($controladores[$controlador])) {
 }
 
 try {
+    // Datos del layout (menú de secciones): se leen una vez desde el Modelo.
+    layout("secciones", (new SeccionRepositorio())->listarConTotales());
+
     $clase  = $controladores[$controlador];
     $objeto = new $clase();
 

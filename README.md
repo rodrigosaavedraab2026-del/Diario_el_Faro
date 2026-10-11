@@ -1,4 +1,4 @@
-# Diario El Faro — PDO en todo nivel y procedimientos almacenados (Semana 8, PRO301 AIEP)
+# Diario El Faro — Usabilidad y UX (Semana 9, PRO301 AIEP)
 
 Autor: Rodrigo Saavedra Ábalos
 
@@ -9,6 +9,25 @@ principales se encapsulan en **procedimientos almacenados**, manteniendo el
 patrón Modelo–Vista–Controlador, los layouts con CSS (Bulma + estilos propios),
 Font Awesome y la responsividad del sitio.
 
+## Semana 9: usabilidad y UX
+
+El diario creció en artículos y secciones, y se pidieron comentarios y vínculos
+a sitios asociados. Para que el sitio no se vuelva sobrecargado y confuso se
+aplicaron estas mejoras (detalle y capturas antes/después en el informe):
+
+| Mejora | Archivos principales |
+|---|---|
+| M1. Navegación reorganizada: buscador visible, barra con **todas** las secciones (desde MySQL), funciones internas movidas al pie («Redacción»), aviso superior cerrable y reloj sin segundos. | `views/layouts/header.php`, `views/layouts/footer.php`, `index.php` (`layout("secciones")`), `assets/js/faro.js` |
+| M2. Portada por bloques: destacado + «Lo último», un bloque por sección con «Ver todo (n)», franja de **sitios asociados**; tarjetas horizontales compactas en móviles. | `controllers/HomeController.php`, `views/home/index.php`, `views/layouts/sitios_asociados.php`, `assets/css/estilos.css` |
+| M3. **Comentarios** en cada artículo, con validación HTML5 (`required`, `minlength`, `maxlength`, `pattern`, `title`, `type="email"`), mensajes accesibles en vivo y validación en el servidor (PHP). Artículos relacionados, tiempo de lectura y sitios asociados de la sección. | `controllers/ArticuloController.php` (`ver`, `comentar`), `models/Comentario*.php`, `views/articulo/ver.php` |
+| M4. Formularios más claros: marca de obligatorios, contador de caracteres, estado válido/erróneo por campo, vista previa de la imagen al publicar, botón con estado «cargando». | `views/contacto/form.php`, `views/usuario/registro.php`, `views/articulo/form.php`, `assets/js/faro.js` |
+| M5. Buscador de noticias con estado vacío útil; contadores con el total real; correos parcialmente ocultos en «Lectores registrados». | `ArticuloController::buscar`, `views/articulo/buscar.php`, `views/usuario/listado.php` |
+
+Base de datos: `database/el_faro_semana9.sql` (también incluido en `el_faro.sql`)
+agrega las tablas `comentario` y `sitio_asociado` con sus llaves foráneas y los
+procedimientos `sp_comentario_listar`, `sp_comentario_registrar` y `sp_sitio_listar`.
+Para una base ya existente, basta importar ese archivo con la base `el_faro` seleccionada.
+
 ## Semana 8: PDO en todo nivel
 
 | Requisito | Implementación |
@@ -17,7 +36,7 @@ Font Awesome y la responsividad del sitio.
 | 2. Métodos de conexión, consulta e inserción | `conectar()`, `desconectar()`, `consultar()`, `consultarFila()`, `consultarValor()`, `insertar()`, `ejecutar()`, `llamarProcedimiento()` y transacciones. |
 | 3. Sentencias preparadas | Todos los métodos usan `prepare()` + `bindValue()` + `execute()`; se eliminaron los `query()` y `exec()` directos. |
 | 4. Procedimientos almacenados | Consultas: `sp_articulo_listar`, `sp_articulo_contar` (OUT), `sp_articulo_buscar`, `sp_usuario_listar`. Inserciones: `sp_articulo_registrar`, `sp_usuario_registrar`, `sp_contacto_registrar` (OUT). Archivo `database/el_faro_procedimientos.sql` (incluido en `el_faro.sql`). |
-| 5. Archivo con datos de conexión | `config/database.php` (constantes `DB_*`, sobrescribibles por variables de entorno). |
+| 5. Archivo con datos de conexión | Semana 8: `config/database.php` con constantes. Semana 9: archivo `.env` cargado con phpdotenv (ver SEGURIDAD.md). |
 | 6. Clases por entidad que usan la conexión | `models/Repositorio.php` (clase base abstracta) → `ArticuloRepositorio`, `SeccionRepositorio`, `AutorRepositorio`, `UsuarioRepositorio`, `ContactoRepositorio`. |
 
 Verificación por consola: `C:\xampp\php\php.exe herramientas\verificar_pdo.php`.
@@ -46,7 +65,7 @@ los procedimientos almacenados.
    (si se importa sin base seleccionada, phpMyAdmin muestra mensajes
    `#1046 Base de datos no seleccionada`).
 5. Pestaña **Importar** → elegir `database/el_faro.sql` → **Importar**.
-   Se crean 7 tablas, la vista, los triggers, el evento, los 7
+   Se crean 9 tablas, la vista, los triggers, el evento, los 10
    procedimientos almacenados y el usuario `el_faro_app` (con permiso
    EXECUTE), y se activa el planificador de eventos.
 6. Abrir `http://localhost/el-faro-mvc/index.php`.
@@ -55,8 +74,10 @@ El script se puede reimportar cuantas veces se quiera (borra y recrea sus
 propias tablas). Para que el evento siga activo después de reiniciar MySQL,
 agregar `event_scheduler=ON` bajo `[mysqld]` en `C:\xampp\mysql\bin\my.ini`.
 
-Credenciales de conexión: `config/database.php` (por defecto usuario
-`el_faro_app`, contraseña `ElFaro_2026`).
+Credenciales de conexión: archivo `.env` en la raíz (ver `.env.example`).
+El proyecto trae un `.env` para XAMPP con el usuario `el_faro_app`; se carga con
+**vlucas/phpdotenv** (carpeta `vendor/`, instalada con `composer install`).
+Lector de prueba para «Ingresar»: `lector.demo@elfaro.cl` / `lector123`.
 
 ### Archivos SQL
 
@@ -67,15 +88,21 @@ Credenciales de conexión: `config/database.php` (por defecto usuario
 | `database/el_faro_triggers.sql` | Opcional en hosting: importar después del anterior si el hosting permite triggers. |
 | `database/el_faro_procedimientos.sql` | Opcional en hosting: importar si el hosting permite crear procedimientos almacenados. |
 
-En hosting, configurar `DB_HOST`, `DB_NOMBRE`, `DB_USUARIO` y `DB_CLAVE` en
-`config/database.php` con los datos que entrega el proveedor.
+En hosting, completar `DB_HOST`, `DB_NOMBRE`, `DB_USUARIO` y `DB_CLAVE` en el
+archivo `.env` con los datos que entrega el proveedor (nunca en el código).
 
 ## Estructura
 
 ```
 index.php                 Front Controller (enrutador ?c=&a=) + manejo de errores de BD
 config/config.php         helpers: base_url, e, redirigir, CSRF, formularios
-config/database.php       credenciales MySQL (sobrescribibles por variables de entorno)
+config/database.php       carga de la configuración de BD desde .env (phpdotenv) o variables de entorno
+.env / .env.example       credenciales (no se versiona) / plantilla documentada
+.htaccess                 bloquea .env, vendor/ y carpetas internas; sin listado de directorios
+core/PoliticaHtml.php     lista blanca de HTML para el cuerpo de los artículos
+core/Sesion.php           sesión protegida (cookie HttpOnly/SameSite, regeneración, límite de intentos)
+vendor/                   dependencias de Composer (vlucas/phpdotenv)
+SEGURIDAD.md              política de contenido, tipos PDO, .env, contraseñas, XSS y criterios de revisión
 core/Paginador.php        cálculo de LIMIT/OFFSET y parámetros ?p= y ?pp=
 core/Validador.php        validaciones de servidor (largo, correo, listas blancas)
 controllers/              Home, Seccion, Articulo, Contacto, Usuario
@@ -94,7 +121,7 @@ database/                 el_faro.sql (XAMPP) · el_faro_hosting.sql · el_faro_
 - **Repositorios (acceso a datos):** `ArticuloRepositorio`, `SeccionRepositorio`,
   `AutorRepositorio`, `UsuarioRepositorio`, `ContactoRepositorio`.
 
-## Modelo relacional (7 tablas, 7 llaves foráneas)
+## Modelo relacional (9 tablas, 9 llaves foráneas)
 
 | Relación | Llave foránea | Al borrar el registro padre |
 |---|---|---|
@@ -105,6 +132,8 @@ database/                 el_faro.sql (XAMPP) · el_faro_hosting.sql · el_faro_
 | articulo 1:N bitacora | `bitacora.id_articulo` → `fk_bitacora_articulo` | CASCADE |
 | usuario 1:N bitacora | `bitacora.id_usuario` → `fk_bitacora_usuario` | CASCADE |
 | contacto 1:N bitacora | `bitacora.id_contacto` → `fk_bitacora_contacto` | CASCADE |
+| articulo 1:N comentario (semana 9) | `comentario.id_articulo` → `fk_comentario_articulo` | CASCADE |
+| seccion 1:N sitio_asociado (opcional, semana 9) | `sitio_asociado.id_seccion` → `fk_sitio_seccion` | SET NULL |
 
 Ninguna tabla queda aislada. La vista `vw_articulo_detalle` une artículo,
 sección y autor para las consultas de la capa Modelo.
@@ -133,6 +162,18 @@ sección y autor para las consultas de la capa Modelo.
 | Campo (name) | igual a la columna MySQL | `email` |
 | Mensaje de error | `ayuda-{formulario}-{campo}` | `ayuda-contacto-email` |
 | Clases PHP | `PascalCase`; repositorio = `{Entidad}Repositorio` | `UsuarioRepositorio` |
+
+## Recomendaciones del docente atendidas (semana 9)
+
+Detalle completo y criterios de revisión en **[SEGURIDAD.md](SEGURIDAD.md)**.
+
+| Recomendación | Implementación |
+|---|---|
+| Política de HTML para artículos enriquecidos | `core/PoliticaHtml.php`: lista blanca de etiquetas y atributos; se valida al publicar y se filtra otra vez al mostrar; CSP. |
+| Tipos PDO (`PDO::PARAM_BOOL`) | `Conexion::tipoPdo()`: `bool` → `PARAM_BOOL`, `int` → `PARAM_INT`, `null` → `PARAM_NULL`; los modelos entregan lógicos como `bool` real. |
+| Configuración sensible en `.env` con phpdotenv | `config/database.php` + `.env` / `.env.example`; validación de variables obligatorias; `.htaccess` bloquea el archivo. |
+| Contraseñas y sesiones | Hash bcrypt (costo 12), `password_verify`, `password_needs_rehash`, inicio/cierre de sesión, `session_regenerate_id`, cookie HttpOnly/SameSite, límite de intentos. |
+| Escape de salida y validación estricta | `e()` con `ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5`; `get_entero`, `get_slug`, `get_busqueda`; cabeceras de seguridad. |
 
 ## Seguridad aplicada (observaciones de la semana 6)
 

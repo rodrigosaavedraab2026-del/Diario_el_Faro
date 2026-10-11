@@ -1,0 +1,14 @@
+# Diario El Faro — reglas de seguridad para Apache (XAMPP / InfinityFree)
+Options -Indexes
+DirectoryIndex index.php
+
+# Archivos de configuración y dependencias: nunca se sirven por la web
+<FilesMatch "^(\.env.*|\.gitignore|composer\.(json|lock)|README\.md|SEGURIDAD\.md)$">
+    Require all denied
+</FilesMatch>
+
+# Carpetas internas: solo index.php las usa (el navegador recibe 403)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(config|controllers|core|models|views|data|vendor|database|herramientas)(/|$) - [F,L]
+</IfModule>

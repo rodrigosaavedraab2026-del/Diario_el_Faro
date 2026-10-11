@@ -156,3 +156,309 @@ button:focus-visible,
   .aviso-superior .icon-text { flex-wrap: nowrap; align-items: flex-start; }
   .aviso-superior { font-size: 0.85rem; }
 }
+
+/* =====================================================================
+   SEMANA 9 — USABILIDAD Y UX
+   Tokens de color de la marca y de cada sección (contraste AA sobre blanco)
+   ===================================================================== */
+:root {
+  --faro-azul: #0C5A82;
+  --faro-azul-oscuro: #094866;
+  --faro-amarillo: #ffdd57;
+  --faro-texto: #242424;
+  --faro-gris: #595959;
+  --faro-borde: #e3e6ea;
+  --faro-fondo-suave: #f5f7f9;
+  --sec-actualidad: #0C5A82;
+  --sec-deporte: #3850B7;
+  --sec-negocios: #1F7A4D;
+  --sec-cultura: #9A5B00;
+  --acento: var(--faro-azul);
+}
+.seccion-actualidad { --acento: var(--sec-actualidad); }
+.seccion-deporte    { --acento: var(--sec-deporte); }
+.seccion-negocios   { --acento: var(--sec-negocios); }
+.seccion-cultura    { --acento: var(--sec-cultura); }
+
+body { color: var(--faro-texto); }
+.meta { color: var(--faro-gris); font-size: 0.85rem; }
+
+/* ----- Aviso superior compacto y cerrable ----- */
+.aviso-superior {
+  background: #fff4c2;
+  color: #3d3200;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f0dc8a;
+}
+.aviso-superior[hidden] { display: none; }
+.aviso-contenido {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 1rem;
+}
+.aviso-texto { flex: 1; display: flex; align-items: flex-start; gap: 0.25rem; min-width: 0; }
+.aviso-fecha { display: flex; align-items: center; gap: 0.25rem; white-space: nowrap; }
+.aviso-cerrar { flex-shrink: 0; }
+.aviso-cerrar:focus-visible { outline: 3px solid var(--faro-azul); outline-offset: 2px; }
+
+/* ----- Barra principal ----- */
+.marca { gap: 0.6rem; }
+.marca-texto {
+  display: flex; flex-direction: column;
+  font-size: 1.35rem; font-weight: 700; line-height: 1.05; color: #fff;
+}
+.marca-texto small {
+  font-size: 0.65rem; font-weight: 500; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #cfd8de;
+}
+.buscador { flex: 1; max-width: 520px; }
+.buscador .field { width: 100%; }
+.buscador .input { border-radius: 4px 0 0 4px; }
+@media screen and (min-width: 1024px) {
+  .navbar-start { flex: 1; }
+}
+.boton-buscar-movil { margin-left: auto; color: #fff; }
+
+/* ----- Barra de secciones (todas visibles; desliza en móvil) ----- */
+.barra-secciones {
+  background: #fff;
+  border-bottom: 1px solid var(--faro-borde);
+  box-shadow: 0 2px 6px rgba(10, 10, 10, 0.04);
+}
+.barra-secciones ul {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: 0 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+.barra-secciones a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 44px;                /* objetivo táctil cómodo (WCAG 2.5.5) */
+  padding: 0 0.85rem;
+  color: var(--faro-texto);
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+}
+.barra-secciones a:hover { color: var(--acento); border-bottom-color: var(--faro-borde); }
+.barra-secciones a.is-active { color: var(--acento); border-bottom-color: var(--acento); }
+
+/* ----- Títulos de bloque con acento de color de la sección ----- */
+.titulo-bloque {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--faro-texto);
+  padding-left: 0.65rem;
+  border-left: 4px solid var(--acento);
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+.encabezado-bloque {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+.encabezado-bloque .titulo-bloque { margin-bottom: 0; }
+.ver-todo {
+  font-weight: 600;
+  color: var(--acento);
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  min-height: 44px;
+}
+.ver-todo:hover { text-decoration: underline; }
+.bloque-seccion + .bloque-seccion > .container { border-top: 1px solid var(--faro-borde); padding-top: 1.5rem; }
+
+/* ----- Portada: destacado + Lo último ----- */
+.card-destacada { position: relative; height: 100%; }
+.titulo-destacado { line-height: 1.15; }
+.bajada { font-size: 1.05rem; color: #3a3a3a; }
+.lo-ultimo { height: 100%; }
+.lo-ultimo ol { counter-reset: ultimo; list-style: none; margin: 0; }
+.lo-ultimo li {
+  counter-increment: ultimo;
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  column-gap: 0.25rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--faro-borde);
+}
+.lo-ultimo li::before {
+  content: counter(ultimo);
+  grid-row: span 2;
+  font-size: 1.4rem; font-weight: 700; color: var(--faro-azul); line-height: 1;
+}
+.lo-ultimo li a { color: var(--faro-texto); font-weight: 600; line-height: 1.3; }
+.lo-ultimo li a:hover { color: var(--faro-azul); text-decoration: underline; }
+.lo-ultimo .meta { font-size: 0.78rem; }
+
+/* ----- Tarjetas: texto legible (antes 0.75 rem) ----- */
+.card-articulo .card-content { padding: 1rem 1.1rem; }
+.card-articulo .card-content > p.is-size-7 { font-size: 0.9rem !important; color: #3a3a3a; line-height: 1.45; }
+.card-articulo .title.is-6 { font-size: 1.05rem; line-height: 1.3; }
+
+/* En móviles las tarjetas pasan a formato horizontal compacto:
+   la portada y las listas se recorren con mucho menos desplazamiento. */
+@media screen and (max-width: 768px) {
+  .card-articulo {
+    display: grid;
+    grid-template-columns: 112px 1fr;
+    align-items: start;
+  }
+  .card-articulo .card-image { height: 100%; }
+  .card-articulo .card-image .image.is-4by3 { padding-top: 0; height: 100%; min-height: 104px; }
+  .card-articulo .card-image .image img { height: 100%; object-fit: cover; border-radius: 4px 0 0 4px; }
+  .card-articulo .card-content { padding: 0.7rem 0.8rem; }
+  .card-articulo .card-content > p.is-size-7 { display: none; }   /* el resumen se lee en la nota */
+  .card-articulo .tag { display: none; }
+  .card-articulo .title.is-6 { font-size: 0.98rem; margin-bottom: 0.35rem; }
+  .card-articulo:hover { transform: none; }
+  .columns.is-multiline > .column { padding-top: 0.4rem; padding-bottom: 0.4rem; }
+  .titulo-destacado { font-size: 1.5rem !important; }
+  .section { padding-left: 1rem; padding-right: 1rem; }
+}
+
+/* ----- Sitios asociados ----- */
+.franja-sitios { background: var(--faro-fondo-suave); }
+.lista-sitios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+.lista-sitios.es-compacta { grid-template-columns: 1fr; gap: 0.25rem; }
+.sitio {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  background: #fff;
+  border: 1px solid var(--faro-borde);
+  border-radius: 6px;
+  padding: 0.8rem;
+  color: var(--faro-texto);
+  height: 100%;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.es-compacta .sitio { border: none; padding: 0.55rem 0; border-bottom: 1px solid var(--faro-borde); border-radius: 0; }
+.sitio:hover { border-color: var(--faro-azul); box-shadow: 0 4px 12px rgba(12, 90, 130, 0.12); }
+.sitio:hover strong { color: var(--faro-azul); text-decoration: underline; }
+.sitio-icono {
+  flex-shrink: 0; width: 2.25rem; height: 2.25rem; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #EBF3F8; color: var(--faro-azul);
+}
+.sitio-texto { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.sitio-descripcion { font-size: 0.85rem; color: #3a3a3a; }
+.sitio-dominio { font-size: 0.75rem; color: var(--faro-gris); }
+.sitio-dominio i { font-size: 0.65rem; margin-left: 0.2rem; }
+
+/* ----- Página del artículo ----- */
+.miga-titulo {
+  max-width: 32ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;
+}
+.titulo-nota { line-height: 1.15; margin-bottom: 0.75rem !important; }
+.bajada-nota { font-size: 1.2rem; color: #3a3a3a; margin-bottom: 0.75rem; }
+.meta-nota {
+  display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem;
+  padding: 0.6rem 0; margin-bottom: 1rem;
+  border-top: 1px solid var(--faro-borde); border-bottom: 1px solid var(--faro-borde);
+}
+.enlace-comentarios { color: var(--faro-azul); font-weight: 600; }
+.cuerpo-nota { font-size: 1.125rem; line-height: 1.7; max-width: 68ch; }
+.barra-lateral { position: sticky; top: 1rem; }
+.lista-relacionados li + li { border-top: 1px solid var(--faro-borde); }
+.lista-relacionados a {
+  display: grid; grid-template-columns: 88px 1fr; gap: 0.7rem; align-items: center;
+  padding: 0.6rem 0; color: var(--faro-texto); font-weight: 600; font-size: 0.92rem; line-height: 1.3;
+}
+.lista-relacionados img { width: 88px; height: 66px; object-fit: cover; border-radius: 4px; }
+.lista-relacionados a:hover span { color: var(--faro-azul); text-decoration: underline; }
+
+/* ----- Comentarios ----- */
+.comentarios { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 2px solid var(--faro-borde); }
+.comentarios:focus { outline: none; }
+.lista-comentarios { list-style: none; margin: 0 0 1.5rem; }
+.comentario { display: flex; gap: 0.85rem; padding: 0.9rem 0; border-bottom: 1px solid var(--faro-borde); }
+.comentario-cabecera { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: baseline; margin-bottom: 0.2rem; }
+.comentario-cabecera time { font-size: 0.8rem; color: var(--faro-gris); }
+.avatar {
+  flex-shrink: 0; width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--faro-azul); color: #fff; font-weight: 700; font-size: 0.9rem;
+}
+.vacio { color: var(--faro-gris); font-style: italic; margin-bottom: 1rem; }
+.caja-comentar { background: var(--faro-fondo-suave); box-shadow: none; border: 1px solid var(--faro-borde); }
+
+/* ----- Formularios: obligatorios, estados y contador ----- */
+.marca-requerido, .label.es-requerido::after { color: #b3261e; font-weight: 700; }
+.label.es-requerido::after { content: " *"; }
+.input.is-success, .textarea.is-success { border-color: #1F7A4D; }
+.help.is-danger::before {
+  content: "\f06a"; font-family: "Font Awesome 6 Free"; font-weight: 900; margin-right: 0.3rem;
+}
+.help.is-danger { color: #b3261e; font-size: 0.85rem; }
+.input.is-danger, .textarea.is-danger { border-color: #b3261e; }
+.contador-caracteres { color: var(--faro-gris); text-align: right; }
+.contador-caracteres.esta-cerca { color: #9A5B00; font-weight: 600; }
+.vista-previa { border-radius: 6px; overflow: hidden; border: 1px solid var(--faro-borde); }
+.vista-previa img { object-fit: cover; }
+.button[aria-disabled="true"] { pointer-events: none; }
+
+/* ----- Estado vacío del buscador ----- */
+.estado-vacio { text-align: center; padding: 2rem 1rem; }
+
+/* ----- Pie de página ----- */
+.lista-pie li a { color: #d5d9dc; display: inline-block; padding: 0.2rem 0; }
+.lista-pie li a:hover { color: var(--faro-amarillo); text-decoration: underline; }
+
+/* ----- Paginación: objetivos táctiles más grandes ----- */
+.barra-paginacion .tag { min-width: 2rem; height: 2rem; font-size: 0.85rem; }
+
+/* Sin animaciones para quien las desactiva en su sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* Móvil: el espacio entre columnas variables no debe superar el margen de la
+   sección (evita desplazamiento horizontal de la página). */
+@media screen and (max-width: 768px) {
+  .columns.is-variable.is-5,
+  .columns.is-variable.is-6 { --columnGap: 0.75rem; }
+}
+.breadcrumb a.miga-titulo { display: block; justify-content: flex-start; }
+.button.is-primary.is-outlined {
+  background-color: transparent !important;
+  color: var(--faro-azul) !important;
+  border-color: var(--faro-azul) !important;
+}
+.button.is-primary.is-outlined:hover { background-color: var(--faro-azul) !important; color: #fff !important; }
+/* Notificaciones con contraste AA (los tonos por defecto de Bulma no lo cumplen con texto blanco) */
+.notification.is-danger:not(.is-light) { background-color: #b3261e; color: #fff; }
+.notification.is-success:not(.is-light) { background-color: #1F7A4D; color: #fff; }
+@media screen and (max-width: 768px) {
+  .titulo-nota { font-size: 1.85rem !important; }
+  .bajada-nota { font-size: 1.05rem; }
+}
+/* Botón para cerrar el aviso: área táctil de 32 px (antes 16 px) */
+.aviso-cerrar.delete { width: 32px; height: 32px; min-width: 32px; min-height: 32px; max-width: 32px; max-height: 32px; }
+
+/* ===== Contenido enriquecido del cuerpo (política de HTML) ===== */
+.cuerpo-nota img { max-width: 100%; height: auto; border-radius: 6px; }
+.cuerpo-nota figure { margin: 1.5rem 0; }
+.cuerpo-nota figcaption { font-size: 0.9rem; color: var(--faro-gris); margin-top: 0.4rem; text-align: center; }
+.cuerpo-nota iframe { width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; border-radius: 6px; }
+.cuerpo-nota blockquote { border-left: 4px solid var(--faro-azul); background: var(--faro-fondo-suave); padding: 0.8rem 1.1rem; font-style: italic; }
+.cuerpo-nota a { color: var(--faro-azul); text-decoration: underline; }
+.politica-html { font-size: 0.85rem; margin: 0.25rem 0 0.5rem; }
+.politica-html summary { cursor: pointer; color: var(--faro-azul); font-weight: 600; min-height: 24px; }
+.politica-html ul { list-style: disc; margin: 0.4rem 0 0 1.2rem; }
+.icono-grande { font-size: 3rem; }
+.logo-pie { vertical-align: middle; }

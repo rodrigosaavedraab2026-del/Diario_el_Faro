@@ -5,7 +5,7 @@
       <div class="columns is-centered">
         <div class="column is-7">
           <div class="box has-text-centered">
-            <span class="icon has-text-danger" style="font-size:3rem;"><i class="fa-solid fa-database" aria-hidden="true"></i></span>
+            <span class="icon has-text-danger icono-grande"><i class="fa-solid fa-database" aria-hidden="true"></i></span>
             <h1 class="title is-4 mt-3">No pudimos conectar con la base de datos</h1>
             <p class="subtitle is-6">
               Verifica que MySQL esté iniciado en el panel de XAMPP y que la base

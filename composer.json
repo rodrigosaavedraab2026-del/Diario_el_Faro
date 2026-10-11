@@ -1,0 +1,26 @@
+{
+    "name": "aiep/el-faro-mvc",
+    "description": "Diario El Faro — PRO301 Taller de Aplicaciones para Internet (AIEP)",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "ext-mbstring": "*",
+        "ext-ctype": "*",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-mbstring": "*",
+        "symfony/polyfill-php80": "*"
+    },
+    "repositories": [
+        {"packagist.org": false},
+        {"type": "vcs", "url": "https://github.com/vlucas/phpdotenv"},
+        {"type": "vcs", "url": "https://github.com/GrahamCampbell/Result-Type"},
+        {"type": "vcs", "url": "https://github.com/schmittjoh/php-option"}
+    ],
+    "config": {
+        "optimize-autoloader": true,
+        "platform": { "php": "8.0.30" }
+    }
+}

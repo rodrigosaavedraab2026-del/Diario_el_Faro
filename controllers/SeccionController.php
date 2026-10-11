@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . "/../models/ArticuloRepositorio.php";
 require_once __DIR__ . "/../models/SeccionRepositorio.php";
+require_once __DIR__ . "/../models/SitioAsociadoRepositorio.php";
 
 /**
  * CONTROLADOR: SeccionController
@@ -24,7 +25,7 @@ class SeccionController
     /** Ruta genérica: index.php?c=seccion&a=ver&s=cultura */
     public function ver()
     {
-        $this->mostrar((string) ($_GET["s"] ?? ""));
+        $this->mostrar((string) get_slug("s"));
     }
 
     private function mostrar($slug)
@@ -42,6 +43,7 @@ class SeccionController
         $paginador = new Paginador($this->articulos->contar($slug), $pagina, $porPagina);
         $articulos = $this->articulos->listarPagina($paginador->porPagina, $paginador->offset(), $slug);
         $rutaPaginacion = "index.php?c=seccion&a=ver&s=" . rawurlencode($slug);
+        $sitios = (new SitioAsociadoRepositorio())->listar($slug, 4);
 
         require __DIR__ . "/../views/seccion/lista.php";
     }

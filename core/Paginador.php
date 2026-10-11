@@ -26,11 +26,11 @@ class Paginador
     /** Lee ?pp= y ?p= de la URL, aceptando solo valores permitidos. */
     public static function leerParametros()
     {
-        $pp = (int) ($_GET["pp"] ?? POR_PAGINA_DEFECTO);
+        $pp = get_entero("pp") ?? POR_PAGINA_DEFECTO;
         if (!in_array($pp, POR_PAGINA_OPCIONES, true)) {
             $pp = POR_PAGINA_DEFECTO;
         }
-        $p = (int) ($_GET["p"] ?? 1);
+        $p = get_entero("p") ?? 1;
         return [$p < 1 ? 1 : $p, $pp];
     }
 }

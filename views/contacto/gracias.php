@@ -5,7 +5,7 @@
       <div class="columns is-centered">
         <div class="column is-7">
           <div class="box has-text-centered">
-            <span class="icon has-text-success" style="font-size:3rem;"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span>
+            <span class="icon has-text-success icono-grande"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></span>
             <h1 class="title is-4 mt-3">¡Gracias por escribirnos, <?php echo e($datos['nombre']); ?>!</h1>
             <p class="subtitle is-6">
               Recibimos tu mensaje sobre <strong><?php echo e($datos['asunto']); ?></strong>

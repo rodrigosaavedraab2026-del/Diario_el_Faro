@@ -56,7 +56,7 @@ USE `el_faro`;
 DROP EVENT IF EXISTS `ev_archivar_contactos`;
 DROP VIEW  IF EXISTS `vw_articulo_detalle`;
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS `bitacora`, `contacto`, `usuario`, `localidad`,
+DROP TABLE IF EXISTS `comentario`, `sitio_asociado`, `bitacora`, `contacto`, `usuario`, `localidad`,
                      `articulo`, `autor`, `seccion`;
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -536,9 +536,11 @@ INSERT INTO `articulo`
 VALUES
   ('Viña del Mar renueva su borde costero con nuevo paseo peatonal',
    'El municipio inauguró la primera etapa de un proyecto que moderniza la costanera y potencia el turismo local.',
-   'El municipio inauguró la primera etapa de un proyecto que busca modernizar la costanera y potenciar el turismo local.
-
-Vecinos y comerciantes valoran la iniciativa, que incorpora ciclovías, áreas verdes y accesos inclusivos a lo largo de dos kilómetros de borde costero.',
+   '<p>El municipio inauguró la primera etapa de un proyecto que busca modernizar la costanera y potenciar el turismo local.</p>
+<p>Vecinos y comerciantes valoran la iniciativa, que incorpora:</p>
+<ul><li><strong>ciclovías</strong> continuas,</li><li>nuevas áreas verdes y</li><li>accesos inclusivos a lo largo de dos kilómetros de borde costero.</li></ul>
+<blockquote>«Queremos que la costanera sea un lugar para caminar, no solo para pasar en auto», señalaron desde el municipio.</blockquote>
+<p>Más información en el sitio de la <a href="https://www.vinadelmar.cl">Municipalidad de Viña del Mar</a>.</p>',
    'Actualidad', 'destacada.jpg', 1, '2026-09-26 09:00:00', 1, 1),
   ('Everton prepara su pretemporada en Sausalito',
    'El plantel ruletero inició los trabajos físicos con miras al próximo campeonato.',
@@ -593,7 +595,7 @@ La entrada es liberada y la feria estará abierta hasta el domingo.',
    'La ocupación hotelera de la región superó el 80 % durante el último mes, impulsada por las mejoras en el borde costero.',
    'Turismo', 'destacada.jpg', 0, '2026-09-23 11:00:00', 3, 1);
 
--- Usuario de ejemplo. La contraseña "lector123" se guarda cifrada
+-- Usuario de ejemplo. La contraseña "lector123" se guarda como HASH (no cifrada)
 -- con password_hash() de PHP (algoritmo bcrypt), nunca en texto plano.
 INSERT INTO `usuario` (`nombre`, `apellido`, `email`, `password_hash`, `plan`, `fecha_registro`, `id_localidad`) VALUES
   ('Lector', 'Demo', 'lector.demo@elfaro.cl',
@@ -607,6 +609,127 @@ INSERT INTO `contacto` (`nombre`, `email`, `asunto`, `mensaje`, `fecha_envio`) V
    'Excelente la cobertura del nuevo paseo costero.', '2026-09-21 12:00:00'),
   ('Josefina Muñoz', 'jmunoz@correo.cl', 'Enviar una noticia',
    'Quiero informar sobre la feria navideña del cerro Castillo.', '2026-09-22 16:30:00');
+
+-- ---------------------------------------------------------------------
+-- 5b. SEMANA 9: COMENTARIOS Y SITIOS ASOCIADOS (mismo contenido que
+--     database/el_faro_semana9.sql)
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS `comentario`, `sitio_asociado`;
+
+-- Comentario de un lector sobre un artículo (1 artículo : N comentarios)
+CREATE TABLE `comentario` (
+  `id_comentario`    INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id_articulo`      INT UNSIGNED NOT NULL,
+  `nombre`           VARCHAR(60)  NOT NULL,
+  `email`            VARCHAR(150) NOT NULL,
+  `texto`            VARCHAR(600) NOT NULL,
+  `estado`           ENUM('publicado','oculto') NOT NULL DEFAULT 'publicado',
+  `fecha_comentario` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_comentario`),
+  KEY `ix_comentario_articulo` (`id_articulo`, `estado`, `fecha_comentario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- CASCADE: si se elimina el artículo, se eliminan sus comentarios.
+ALTER TABLE `comentario` ADD CONSTRAINT `fk_comentario_articulo`
+  FOREIGN KEY (`id_articulo`) REFERENCES `articulo` (`id_articulo`)
+  ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- Sitio asociado (vínculo externo). id_seccion es opcional: si se indica,
+-- el vínculo también aparece en esa sección y en sus artículos.
+CREATE TABLE `sitio_asociado` (
+  `id_sitio`    INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `nombre`      VARCHAR(80)  NOT NULL,
+  `url`         VARCHAR(255) NOT NULL,
+  `descripcion` VARCHAR(160) NOT NULL,
+  `categoria`   ENUM('Gobierno','Cultura','Deporte','Economía','Servicios') NOT NULL DEFAULT 'Servicios',
+  `orden`       TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  `activo`      TINYINT(1)   NOT NULL DEFAULT 1,
+  `id_seccion`  INT UNSIGNED NULL,
+  PRIMARY KEY (`id_sitio`),
+  UNIQUE KEY `uq_sitio_url` (`url`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- SET NULL: si se elimina la sección, el vínculo queda como general.
+ALTER TABLE `sitio_asociado` ADD CONSTRAINT `fk_sitio_seccion`
+  FOREIGN KEY (`id_seccion`) REFERENCES `seccion` (`id_seccion`)
+  ON DELETE SET NULL ON UPDATE RESTRICT;
+
+-- ---------------------------------------------------------------------
+-- PROCEDIMIENTOS ALMACENADOS
+-- ---------------------------------------------------------------------
+DROP PROCEDURE IF EXISTS `sp_comentario_listar`;
+DROP PROCEDURE IF EXISTS `sp_comentario_registrar`;
+DROP PROCEDURE IF EXISTS `sp_sitio_listar`;
+
+DELIMITER $$
+
+-- CONSULTA: comentarios publicados de un artículo (más antiguos primero).
+-- Nunca devuelve el correo de quien comenta.
+CREATE PROCEDURE `sp_comentario_listar`(
+  IN p_id_articulo INT
+)
+READS SQL DATA
+BEGIN
+  SELECT `id_comentario`, `id_articulo`, `nombre`, `texto`, `fecha_comentario`
+    FROM `comentario`
+   WHERE `id_articulo` = p_id_articulo
+     AND `estado` = 'publicado'
+   ORDER BY `fecha_comentario` ASC, `id_comentario` ASC;
+END$$
+
+-- INSERCIÓN: registra un comentario y devuelve su id (OUT p_id).
+CREATE PROCEDURE `sp_comentario_registrar`(
+  IN  p_id_articulo INT,
+  IN  p_nombre      VARCHAR(60),
+  IN  p_email       VARCHAR(150),
+  IN  p_texto       VARCHAR(600),
+  OUT p_id          INT
+)
+MODIFIES SQL DATA
+BEGIN
+  INSERT INTO `comentario` (`id_articulo`, `nombre`, `email`, `texto`)
+  VALUES (p_id_articulo, TRIM(p_nombre), LOWER(TRIM(p_email)), TRIM(p_texto));
+  SET p_id = LAST_INSERT_ID();
+END$$
+
+-- CONSULTA: sitios asociados activos. p_slug NULL = todos;
+-- con una sección, devuelve primero los de esa sección y luego los generales.
+CREATE PROCEDURE `sp_sitio_listar`(
+  IN p_slug VARCHAR(60)
+)
+READS SQL DATA
+BEGIN
+  SELECT sa.`id_sitio`, sa.`nombre`, sa.`url`, sa.`descripcion`, sa.`categoria`,
+         s.`slug` AS `seccion_slug`
+    FROM `sitio_asociado` sa
+    LEFT JOIN `seccion` s ON s.`id_seccion` = sa.`id_seccion`
+   WHERE sa.`activo` = 1
+     AND (p_slug IS NULL OR s.`slug` = p_slug OR sa.`id_seccion` IS NULL)
+   ORDER BY (p_slug IS NOT NULL AND s.`slug` = p_slug) DESC, sa.`orden`, sa.`nombre`;
+END$$
+
+DELIMITER ;
+
+-- ---------------------------------------------------------------------
+-- DATOS DE EJEMPLO
+-- ---------------------------------------------------------------------
+INSERT INTO `sitio_asociado` (`nombre`, `url`, `descripcion`, `categoria`, `orden`, `id_seccion`) VALUES
+  ('Municipalidad de Viña del Mar', 'https://www.vinadelmar.cl', 'Trámites, servicios y noticias del municipio.', 'Gobierno', 1, NULL),
+  ('Gobierno Regional de Valparaíso', 'https://www.gorevalparaiso.cl', 'Proyectos e inversión pública en la región.', 'Gobierno', 2, 1),
+  ('Dirección Meteorológica de Chile', 'https://www.meteochile.gob.cl', 'Pronóstico del tiempo y alertas meteorológicas.', 'Servicios', 3, NULL),
+  ('EFE Valparaíso', 'https://www.efe.cl', 'Horarios y estado del tren Limache–Puerto.', 'Servicios', 4, 1),
+  ('Instituto Nacional de Deportes', 'https://www.ind.cl', 'Programas deportivos y recintos públicos.', 'Deporte', 5, 2),
+  ('Sercotec', 'https://www.sercotec.cl', 'Apoyo y fondos para micro y pequeñas empresas.', 'Economía', 6, 3),
+  ('Patrimonio Cultural', 'https://www.patrimoniocultural.gob.cl', 'Museos, bibliotecas y patrimonio de Chile.', 'Cultura', 7, 4);
+
+INSERT INTO `comentario` (`id_articulo`, `nombre`, `email`, `texto`, `fecha_comentario`) VALUES
+  (1, 'Camila Rojas', 'camila.rojas@correo.cl', 'Por fin una ciclovía continua por la costanera. Ojalá se mantenga bien iluminada de noche.', '2026-09-26 11:20:00'),
+  (1, 'Lector Demo', 'lector.demo@elfaro.cl', '¿Se sabe cuándo empieza la segunda etapa del proyecto?', '2026-09-26 13:05:00');
+
+-- Verificación:
+--   CALL sp_comentario_listar(1);
+--   CALL sp_sitio_listar(NULL);
+--   CALL sp_sitio_listar('deporte');
 
 -- ---------------------------------------------------------------------
 -- 6. CONSULTAS DE VERIFICACIÓN

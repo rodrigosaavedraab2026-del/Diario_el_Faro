@@ -19,4 +19,15 @@ class SeccionRepositorio extends Repositorio
         $fila = $this->conexion->consultarFila("SELECT * FROM seccion WHERE slug = :slug", [":slug" => $slug]);
         return $fila ? Seccion::desdeFila($fila) : null;
     }
+
+    /** Secciones con su cantidad de artículos: [ [Seccion, total], ... ] (menú y portada). */
+    public function listarConTotales()
+    {
+        $filas = $this->conexion->consultar(
+            "SELECT s.*, COUNT(a.id_articulo) AS total
+               FROM seccion s LEFT JOIN articulo a ON a.id_seccion = s.id_seccion
+              GROUP BY s.id_seccion ORDER BY s.id_seccion"
+        );
+        return array_map(fn($f) => [Seccion::desdeFila($f), (int) $f["total"]], $filas);
+    }
 }

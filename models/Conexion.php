@@ -36,6 +36,8 @@ final class Conexion
 {
     /** Código de MySQL/MariaDB para "PROCEDURE ... does not exist". */
     const ERROR_PROCEDIMIENTO_INEXISTENTE = 1305;
+    /** 1370: el usuario del hosting no tiene permiso EXECUTE (MySQL lo informa antes que la inexistencia). */
+    const ERROR_SIN_PERMISO_EXECUTE = 1370;
 
     /** @var Conexion|null instancia única (Singleton) */
     private static $instancia = null;
@@ -68,16 +70,17 @@ final class Conexion
 
     /**
      * Abre la conexión PDO la primera vez que se necesita (carga diferida)
-     * con los datos de config/database.php, y la reutiliza en adelante.
+     * con los datos del archivo .env (ver config/database.php) y la reutiliza en adelante.
      * Si falla, PDO lanza PDOException, que index.php captura para mostrar
      * una página de error sin exponer detalles técnicos.
      */
     public function conectar()
     {
         if ($this->pdo === null) {
-            $dsn = "mysql:host=" . DB_HOST . ";port=" . DB_PORT .
-                   ";dbname=" . DB_NOMBRE . ";charset=" . DB_CHARSET;
-            $this->pdo = new PDO($dsn, DB_USUARIO, DB_CLAVE, [
+            $bd  = configuracion_bd();   // config/database.php: lee el .env (phpdotenv) o el entorno
+            $dsn = "mysql:host=" . $bd["host"] . ";port=" . $bd["puerto"] .
+                   ";dbname=" . $bd["nombre"] . ";charset=" . $bd["charset"];
+            $this->pdo = new PDO($dsn, $bd["usuario"], $bd["clave"], [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // errores como excepciones
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       // filas como arreglos asociativos
                 PDO::ATTR_EMULATE_PREPARES   => false,                  // preparación real en el motor
@@ -173,7 +176,7 @@ final class Conexion
         try {
             $sentencia = $this->preparar($sql, array_values($entrada));
         } catch (PDOException $ex) {
-            if (($ex->errorInfo[1] ?? null) === self::ERROR_PROCEDIMIENTO_INEXISTENTE) {
+            if (in_array($ex->errorInfo[1] ?? null, [self::ERROR_PROCEDIMIENTO_INEXISTENTE, self::ERROR_SIN_PERMISO_EXECUTE], true)) {
                 throw new ProcedimientoNoDisponible("El procedimiento $nombre no existe en la base de datos.", 0, $ex);
             }
             throw $ex;
@@ -227,24 +230,43 @@ final class Conexion
      * ------------------------------------------------------------------ */
 
     /**
-     * Prepara la sentencia, amarra (bind) cada parámetro con su tipo y la
-     * ejecuta. Acepta marcadores con nombre (:id) o posicionales (?).
+     * Prepara la sentencia, amarra (bind) cada parámetro con su tipo PDO
+     * EXPLÍCITO y la ejecuta. Acepta marcadores con nombre (:id) o posicionales (?).
      */
     private function preparar($sql, array $parametros)
     {
         $sentencia = $this->conectar()->prepare($sql);
         foreach ($parametros as $clave => $valor) {
             $marcador = is_int($clave) ? $clave + 1 : $clave;
-            $sentencia->bindValue($marcador, is_bool($valor) ? (int) $valor : $valor, $this->tipoPdo($valor));
+            $sentencia->bindValue($marcador, $valor, self::tipoPdo($valor));
         }
         $sentencia->execute();
         return $sentencia;
     }
 
-    /** Tipo PDO según el valor: enteros, nulos y booleanos no viajan como texto. */
-    private function tipoPdo($valor)
+    /**
+     * Tipo PDO según el TIPO PHP del valor (semana 9, recomendación del docente).
+     *
+     * Regla para evitar ambigüedades entre lógicos y enteros:
+     *  - Los modelos entregan los valores lógicos como bool REAL de PHP
+     *    (true/false), nunca como 1/0 ni como "1"/"0". Ej.: Articulo::esDestacado().
+     *  - is_bool() se evalúa ANTES que is_int(): true es bool, no entero.
+     *  - Los identificadores, límites y desplazamientos llegan como int con un
+     *    cast explícito en el repositorio ((int) $id), por lo que nunca viajan como texto.
+     *  - Una cadena numérica ("1") sigue siendo texto: no se adivina su tipo.
+     *
+     *   Valor PHP          Tipo PDO          Columna MySQL típica
+     *   true / false       PDO::PARAM_BOOL   TINYINT(1)  (destacado, activo)
+     *   int                PDO::PARAM_INT    INT, LIMIT/OFFSET
+     *   null               PDO::PARAM_NULL   columnas o parámetros opcionales
+     *   string / float     PDO::PARAM_STR    VARCHAR, TEXT, DATETIME, ENUM
+     */
+    public static function tipoPdo($valor)
     {
-        if (is_int($valor) || is_bool($valor)) {
+        if (is_bool($valor)) {
+            return PDO::PARAM_BOOL;
+        }
+        if (is_int($valor)) {
             return PDO::PARAM_INT;
         }
         if ($valor === null) {
